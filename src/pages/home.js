@@ -1,11 +1,9 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom'; // Import Link
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import heroImage from '../assets/hero-image.jpg';
 import { auth, db } from "../firebase";
-
- 
-
 
 export default function Home() {
   useEffect(() => {
@@ -44,15 +42,6 @@ export default function Home() {
           >
             Redistribute. Reduce Waste. Rebuild Communities.
           </h1>
-          {/* <p
-            className="text-lg md:text-xl mb-8 max-w-3xl mx-auto drop-shadow-md"
-            data-aos="fade-up"
-            data-aos-duration="1000"
-            data-aos-delay="400"
-          >
-            Connect Stores with surplus to those who need it most — Nearby
-            Stores and NGOs.
-          </p> */}
           <p
             className="text-lg md:text-xl mb-8 max-w-3xl mx-auto drop-shadow-md"
             data-aos="fade-up"
@@ -143,7 +132,7 @@ export default function Home() {
           Who Can Use SwapLink?
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div
+          <Link to="/members/store"
             className="bg-white text-indigo-900 rounded-xl shadow-lg p-8 flex flex-col items-center hover:shadow-2xl transition duration-300 cursor-pointer"
             data-aos="zoom-in"
             data-aos-delay="100"
@@ -153,8 +142,8 @@ export default function Home() {
             <p className="text-center">
               Reduce waste, cut loss, and track impact with ease.
             </p>
-          </div>
-          <div
+          </Link>
+          <Link to="/members/ngo"
             className="bg-white text-indigo-900 rounded-xl shadow-lg p-8 flex flex-col items-center hover:shadow-2xl transition duration-300 cursor-pointer"
             data-aos="zoom-in"
             data-aos-delay="300"
@@ -162,8 +151,8 @@ export default function Home() {
             <div className="text-6xl mb-4">❤️</div>
             <h3 className="text-2xl font-bold mb-2">NGOs</h3>
             <p className="text-center">Get food supplies to feed people in your community.</p>
-          </div>
-          <div
+          </Link>
+          <Link to="/members/restaurant"
             className="bg-white text-indigo-900 rounded-xl shadow-lg p-8 flex flex-col items-center hover:shadow-2xl transition duration-300 cursor-pointer"
             data-aos="zoom-in"
             data-aos-delay="500"
@@ -171,7 +160,7 @@ export default function Home() {
             <div className="text-6xl mb-4">💰</div>
             <h3 className="text-2xl font-bold mb-2">Nearby Stores</h3>
             <p className="text-center">Claim discounted stock and refill shelves fast.</p>
-          </div>
+          </Link>
         </div>
       </section>
 
@@ -291,5 +280,4 @@ export default function Home() {
     </>
 
   );
- }
-
+}

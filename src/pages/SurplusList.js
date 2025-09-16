@@ -1,8 +1,6 @@
-
-
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import Navbar from "../components/navbar";
 import { PackageCheck, MapPin, Layers3 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -13,7 +11,9 @@ export default function SurplusList() {
   useEffect(() => {
     const fetchSurplus = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "surplus"));
+        // Query for surplus items that have not been claimed yet
+        const q = query(collection(db, "surplus"), where("claimedBy", "==", null));
+        const querySnapshot = await getDocs(q);
         const items = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
@@ -79,7 +79,7 @@ export default function SurplusList() {
             </div>
           ) : (
             <div className="text-center text-white mt-20">
-              <p className="text-xl">📦 No surplus items listed yet.</p>
+              <p className="text-xl">📦 No available surplus items at the moment.</p>
             </div>
           )}
         </div>

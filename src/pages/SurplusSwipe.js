@@ -1,8 +1,6 @@
-
-
 import React, { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { db } from "../firebase";
+import { db, auth } from "../firebase"; // Import auth
 import {
   collection,
   getDocs,
@@ -11,11 +9,13 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import Navbar from "../components/navbar";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 export default function SurplusSwipe() {
   const [items, setItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const swipeControls = useAnimation();
+  const navigate = useNavigate(); // Initialize navigate
 
   useEffect(() => {
     const fetchSurplus = async () => {
@@ -23,7 +23,7 @@ export default function SurplusSwipe() {
         const querySnapshot = await getDocs(collection(db, "surplus"));
         const data = querySnapshot.docs
           .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .filter((item) => !item.claimedBy);
+          .filter((item) => !item.claimedBy); // Filter out already claimed items
         setItems(data);
       } catch (err) {
         console.error("Error fetching surplus:", err);
@@ -33,16 +33,25 @@ export default function SurplusSwipe() {
   }, []);
 
   const handleSwipe = async (direction) => {
+    const user = auth.currentUser;
+
+    // Check if user is logged in before claiming
+    if (direction === 'right' && !user) {
+      alert("Please log in to claim items.");
+      navigate('/login');
+      return;
+    }
+
     const item = items[currentIndex];
     if (direction === "right") {
       try {
         const itemRef = doc(db, "surplus", item.id);
         await updateDoc(itemRef, {
-          claimedBy: "demoUser@example.com", // Replace with actual user
+          claimedBy: user.uid, // Use the actual user's ID
+          claimedByName: user.displayName || user.email, // Add the user's name
           claimedAt: serverTimestamp(),
         });
         alert(`You claimed "${item.title}"!`);
-
       } catch (err) {
         console.error("Error claiming item:", err);
       }
