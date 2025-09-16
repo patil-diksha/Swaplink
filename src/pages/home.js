@@ -158,7 +158,7 @@ export default function Home() {
             data-aos-delay="500"
           >
             <div className="text-6xl mb-4">💰</div>
-            <h3 className="text-2xl font-bold mb-2">Nearby Stores</h3>
+            <h3 className="text-2xl font-bold mb-2">Restaurants</h3>
             <p className="text-center">Claim discounted stock and refill shelves fast.</p>
           </Link>
         </div>

@@ -71,7 +71,7 @@ export default function MembersList() {
                     transition={{ delay: index * 0.1 }}
                     className="bg-white p-6 rounded-lg shadow-md text-left"
                   >
-                    <p className="font-semibold text-blue-700 truncate">{member.email}</p>
+                    <p className="font-semibold text-blue-700 truncate">{member.name || member.email}</p>
                     <p className="text-sm text-gray-500">Member since: {new Date(member.createdAt.seconds * 1000).toLocaleDateString()}</p>
                   </motion.div>
                 ))}

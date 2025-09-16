@@ -69,18 +69,18 @@ export default function SurplusListing() {
     e.preventDefault();
     
     if (!user) {
-      alert("You must be logged in to list an item.");
+      console.error("You must be logged in to list an item.");
       navigate("/login");
       return;
     }
     
     if (!userLocation) {
-        alert("Your location is not set. Please update your profile.");
+        console.error("Your location is not set. Please update your profile.");
         return;
     }
 
     if (!imageFile) {
-      alert("Please select an image to upload!");
+      console.error("Please select an image to upload!");
       return;
     }
 
@@ -106,12 +106,11 @@ export default function SurplusListing() {
         creatorName: user.displayName || "Anonymous",
         geolocation: new GeoPoint(userLocation.latitude, userLocation.longitude),
       });
-
-      alert("✅ Surplus item listed successfully!");
+      
+      console.log("✅ Surplus item listed successfully!");
       navigate("/dashboard");
     } catch (error) {
       console.error("Error uploading/saving:", error);
-      alert("❌ Upload failed: " + error.message);
     }
 
     setUploading(false);

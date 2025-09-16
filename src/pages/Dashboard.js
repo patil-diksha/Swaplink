@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { PackagePlus, ShoppingCart, ThumbsUp, LogOut, Home, Map } from 'lucide-react'; // Import Map icon
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { PackagePlus, ShoppingCart, ThumbsUp, LogOut, Home, Map } from 'lucide-react';
+import Notifications from '../components/Notifications';
 
 // Main Dashboard Component
 export default function Dashboard() {
@@ -55,6 +56,7 @@ export default function Dashboard() {
             Welcome, <span className="text-green-600">{userData.name || user.displayName || userData.email}</span>!
           </h1>
           <div className="flex items-center gap-4">
+            {user && <Notifications user={user} />}
             <Link to="/home" className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
               <Home size={18} /> Home
             </Link>
@@ -79,6 +81,8 @@ export default function Dashboard() {
 function StoreDashboard({ user }) {
   const [myListings, setMyListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [notifying, setNotifying] = useState(null);
+  const [notifiedItems, setNotifiedItems] = useState([]);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -92,6 +96,27 @@ function StoreDashboard({ user }) {
 
     fetchListings();
   }, [user]);
+
+  const handleSendNotification = async (item) => {
+    setNotifying(item.id);
+    try {
+      // Send in-app notification
+      await addDoc(collection(db, 'notifications'), {
+        surplusId: item.id,
+        surplusTitle: item.title,
+        message: `A new surplus item "${item.title}" has been listed!`,
+        createdAt: serverTimestamp(),
+        sentBy: user.uid,
+      });
+
+      setNotifiedItems([...notifiedItems, item.id]);
+      console.log('🔔 Notification sent for', item.title);
+    } catch (error) {
+      console.error('Error sending notification:', error);
+    } finally {
+      setNotifying(null);
+    }
+  };
 
   return (
     <div className="bg-white/60 backdrop-blur-md p-8 rounded-xl shadow-lg">
@@ -109,11 +134,26 @@ function StoreDashboard({ user }) {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myListings.length > 0 ? (
             myListings.map(item => (
-              <div key={item.id} className="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
-                <img src={item.imageURL} alt={item.title} className="w-full h-32 object-cover rounded-md mb-3" />
-                <h4 className="font-bold text-green-800">{item.title}</h4>
-                <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                {item.claimedBy && <p className="text-sm font-bold text-blue-600 mt-2">Claimed!</p>}
+              <div key={item.id} className="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200 flex flex-col justify-between">
+                <div>
+                  <img src={item.imageURL} alt={item.title} className="w-full h-32 object-cover rounded-md mb-3" />
+                  <h4 className="font-bold text-green-800">{item.title}</h4>
+                  <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                  {item.claimedBy && <p className="text-sm font-bold text-blue-600 mt-2">Claimed!</p>}
+                </div>
+                {!item.claimedBy && (
+                  <button
+                    onClick={() => handleSendNotification(item)}
+                    disabled={notifying === item.id || notifiedItems.includes(item.id)}
+                    className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {notifying === item.id 
+                      ? 'Sending...' 
+                      : notifiedItems.includes(item.id) 
+                      ? 'Notified' 
+                      : 'Notify Members'}
+                  </button>
+                )}
               </div>
             ))
           ) : (

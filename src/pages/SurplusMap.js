@@ -23,15 +23,24 @@ const redIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+// A different icon for clusters
+const blueIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
 
 export default function SurplusMap() {
-  const [surplusItems, setSurplusItems] = useState([]);
+  const [groupedItems, setGroupedItems] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSurplusItems = async () => {
       try {
-        // Query for all surplus items that have a geolocation field
         const q = query(collection(db, 'surplus'), where('geolocation', '!=', null));
         const querySnapshot = await getDocs(q);
         
@@ -40,8 +49,19 @@ export default function SurplusMap() {
           ...doc.data(),
         }));
         
-        console.log("Fetched items for map:", items); // For debugging
-        setSurplusItems(items);
+        // Group items by location
+        const itemsByLocation = items.reduce((acc, item) => {
+            if (item.geolocation && item.geolocation.latitude && item.geolocation.longitude) {
+                const key = `${item.geolocation.latitude}_${item.geolocation.longitude}`;
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push(item);
+            }
+            return acc;
+        }, {});
+
+        setGroupedItems(itemsByLocation);
       } catch (error) {
         console.error("Error fetching surplus items for map:", error);
       } finally {
@@ -56,7 +76,6 @@ export default function SurplusMap() {
     return <div className="flex items-center justify-center h-screen">Loading Map...</div>;
   }
 
-  // Default center for the map if no items are available
   const mapCenter = [19.0760, 72.8777]; // Centered on Mumbai
 
   return (
@@ -66,35 +85,50 @@ export default function SurplusMap() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {surplusItems.map(item => {
-          // Check if geolocation data is valid before creating a marker
-          if (item.geolocation && item.geolocation.latitude && item.geolocation.longitude) {
-            const position = [item.geolocation.latitude, item.geolocation.longitude];
-            const isClaimed = !!item.claimedBy;
+        {Object.values(groupedItems).map((itemsAtLocation, index) => {
+          const firstItem = itemsAtLocation[0];
+          const position = [firstItem.geolocation.latitude, firstItem.geolocation.longitude];
+          const isMulti = itemsAtLocation.length > 1;
+          
+          // An item is considered claimed if any item at the location is claimed.
+          // For single items, this is straightforward. For multiple, the marker turns blue.
+          const isAnyClaimed = itemsAtLocation.some(item => !!item.claimedBy);
 
-            return (
-              <Marker key={item.id} position={position} icon={isClaimed ? redIcon : greenIcon}>
-                <Popup>
-                  <div className="font-sans">
-                    <img src={item.imageURL} alt={item.title} className="w-full h-24 object-cover rounded-md mb-2"/>
-                    <h3 className="font-bold text-lg text-gray-800">{item.title}</h3>
-                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                    <p className="text-sm text-gray-600">{item.location}</p>
-                    {isClaimed ? (
-                      <p className="text-sm font-bold text-red-600 mt-2">Status: Claimed</p>
-                    ) : (
-                      <p className="text-sm font-bold text-green-600 mt-2">Status: Available</p>
-                    )}
-                     {item.creatorName && <p className="text-xs text-gray-500 mt-1">Listed by: {item.creatorName}</p>}
-                  </div>
-                </Popup>
-              </Marker>
-            );
+          let icon = greenIcon; // Default to available
+          if (isMulti) {
+              icon = blueIcon; // Use blue for multiple items
+          } else if (isAnyClaimed) {
+              icon = redIcon; // Use red for single, claimed items
           }
-          return null; // Don't render a marker if location is invalid
+
+          return (
+            <Marker key={index} position={position} icon={icon}>
+              <Popup>
+                <div className="font-sans max-h-64 overflow-y-auto">
+                    {itemsAtLocation.map(item => {
+                         const isClaimed = !!item.claimedBy;
+                         return (
+                            <div key={item.id} className="mb-4 border-b pb-2 last:border-b-0 last:pb-0 last:mb-0">
+                                <img src={item.imageURL} alt={item.title} className="w-full h-24 object-cover rounded-md mb-2"/>
+                                <h3 className="font-bold text-lg text-gray-800">{item.title}</h3>
+                                <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                                <p className="text-sm text-gray-600">{item.location}</p>
+                                {isClaimed ? (
+                                <p className="text-sm font-bold text-red-600 mt-2">Status: Claimed</p>
+                                ) : (
+                                <p className="text-sm font-bold text-green-600 mt-2">Status: Available</p>
+                                )}
+                                {item.creatorName && <p className="text-xs text-gray-500 mt-1">Listed by: {item.creatorName}</p>}
+                           </div>
+                         )
+                    })}
+                     {isMulti && <div className="text-center font-bold text-sm mt-2 text-blue-700">{itemsAtLocation.length} items at this location</div>}
+                </div>
+              </Popup>
+            </Marker>
+          );
         })}
       </MapContainer>
     </div>
   );
 }
-
