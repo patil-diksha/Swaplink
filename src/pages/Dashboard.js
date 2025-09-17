@@ -120,16 +120,27 @@ function StoreDashboard({ user }) {
 
   return (
     <div className="bg-white/60 backdrop-blur-md p-8 rounded-xl shadow-lg">
-      <h2 className="text-3xl font-bold text-green-900 mb-6">Store Dashboard</h2>
-      <Link
-        to="/list-surplus"
-        className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-lg shadow-md mb-8"
-      >
-        <PackagePlus size={22} />
-        List New Surplus Item
-      </Link>
-      
-      <h3 className="text-2xl font-semibold text-gray-700 mb-4 border-t pt-6">Your Current Listings</h3>
+      <h2 className="text-3xl font-bold text-green-900 mb-6">Store & Restaurant Dashboard</h2>
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
+        <Link
+          to="/list-surplus"
+          className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-lg shadow-md w-full md:w-auto"
+        >
+          <PackagePlus size={22} />
+          List New Surplus
+        </Link>
+        <Link
+          to="/surplus-map"
+          className="inline-flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300 text-lg shadow-md w-full md:w-auto"
+        >
+          <Map size={22} />
+          View Surplus Map
+        </Link>
+      </div>
+
+      <h3 className="text-2xl font-semibold text-gray-700 mb-4 border-t pt-6">
+        Your Current Listings
+      </h3>
       {loading ? <p>Loading your listings...</p> : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myListings.length > 0 ? (

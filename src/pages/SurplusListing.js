@@ -14,6 +14,7 @@ export default function SurplusListing() {
     description: "",
     quantity: "",
     location: "",
+    price: "",
   });
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -99,6 +100,7 @@ export default function SurplusListing() {
 
       await addDoc(collection(db, "surplus"), {
         ...formData,
+        price: Number(formData.price),
         imageURL,
         timestamp: serverTimestamp(),
         claimedBy: null,
@@ -137,6 +139,8 @@ export default function SurplusListing() {
             <textarea className="border border-emerald-300 p-3 rounded-md w-full" name="description" value={formData.description} onChange={handleChange} placeholder="Description" required />
             <input className="border border-emerald-300 p-3 rounded-md w-full" name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" required />
             <input className="border border-emerald-300 p-3 rounded-md w-full" name="location" value={formData.location} onChange={handleChange} placeholder="Pickup Address" required />
+            <input type="number" className="border border-emerald-300 p-3 rounded-md w-full" name="price" value={formData.price} onChange={handleChange} placeholder="Price (INR)" required step="0.01" min="0" />
+
             <div className="mt-4">
               <label className="block text-emerald-800 font-medium mb-2">Upload Image</label>
               <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200" required />
@@ -151,4 +155,3 @@ export default function SurplusListing() {
     </>
   );
 }
-

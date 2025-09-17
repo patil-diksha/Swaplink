@@ -7,6 +7,8 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
+  where,
+  query
 } from "firebase/firestore";
 import Navbar from "../components/navbar";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
@@ -20,10 +22,10 @@ export default function SurplusSwipe() {
   useEffect(() => {
     const fetchSurplus = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "surplus"));
+        const q = query(collection(db, "surplus"), where("claimedBy", "==", null));
+        const querySnapshot = await getDocs(q);
         const data = querySnapshot.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .filter((item) => !item.claimedBy); // Filter out already claimed items
+          .map((doc) => ({ id: doc.id, ...doc.data() }));
         setItems(data);
       } catch (err) {
         console.error("Error fetching surplus:", err);
@@ -32,31 +34,66 @@ export default function SurplusSwipe() {
     fetchSurplus();
   }, []);
 
-  const handleSwipe = async (direction) => {
+  const handlePurchase = (item) => {
     const user = auth.currentUser;
-
-    // Check if user is logged in before claiming
-    if (direction === 'right' && !user) {
-      alert("Please log in to claim items.");
+    if (!user) {
+      alert('Please log in to purchase items.');
       navigate('/login');
       return;
     }
 
-    const item = items[currentIndex];
-    if (direction === "right") {
-      try {
-        const itemRef = doc(db, "surplus", item.id);
-        await updateDoc(itemRef, {
-          claimedBy: user.uid, // Use the actual user's ID
-          claimedByName: user.displayName || user.email, // Add the user's name
-          claimedAt: serverTimestamp(),
-        });
-        alert(`You claimed "${item.title}"!`);
-      } catch (err) {
-        console.error("Error claiming item:", err);
+    const options = {
+      key: 'rzp_test_ILz5tAFajX0g03', // This is a public test key from Razorpay docs.
+      amount: item.price * 100,
+      currency: 'INR',
+      name: 'SwapLink',
+      description: `Purchase of ${item.title}`,
+      image: '/logo192.png',
+      handler: async (response) => {
+        try {
+          const itemRef = doc(db, 'surplus', item.id);
+          await updateDoc(itemRef, {
+            claimedBy: user.uid,
+            claimedByName: user.displayName || user.email,
+            claimedAt: serverTimestamp(),
+            paymentId: response.razorpay_payment_id,
+          });
+          alert(`Purchase successful! Payment ID: ${response.razorpay_payment_id}`);
+          setCurrentIndex((prev) => prev + 1);
+        } catch (err) {
+          console.error('Error updating document:', err);
+          alert('Payment was successful, but there was an error updating the item status.');
+        }
+      },
+      prefill: {
+        name: user.displayName || '',
+        email: user.email || '',
+      },
+      theme: {
+        color: '#4CAF50',
+      },
+      modal: {
+        ondismiss: function() {
+          console.log('Payment modal was closed.');
+        }
+      },
+      events: {
+        'payment.failed': function (response) {
+            alert(`Oops! Something went wrong.\nPayment Failed.\n\nError: ${response.error.description}`);
+        }
       }
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
+  const handleSwipe = async (direction) => {
+    if (direction === "right") {
+      handlePurchase(items[currentIndex]);
+    } else {
+        setCurrentIndex((prev) => prev + 1);
     }
-    setCurrentIndex((prev) => prev + 1);
   };
 
   const swipe = async (dir) => {
@@ -82,13 +119,12 @@ export default function SurplusSwipe() {
             "url('https://media.istockphoto.com/id/1326769094/photo/vegetables-and-cereals-in-a-paper-bag-on-a-black-background-the-concept-of-a-consumer-basket.jpg?s=612x612&w=0&k=20&c=dK07o_pY9dCxp8JelX0CI2WG3Uj05x2IQYM-SSpy-Rs=')",
         }}
       >
-        {/* Overlay */}
         <div className="absolute inset-0 bg-green-900/40 backdrop-blur-sm z-0" />
 
         <div className="z-10">
           {currentItem ? (
             <motion.div
-              className="w-80 h-[30rem] bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 flex flex-col justify-between border border-green-300 hover:scale-105 transition-transform duration-300"
+              className="w-80 h-[32rem] bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-6 flex flex-col justify-between border border-green-300 hover:scale-105 transition-transform duration-300"
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.5}
@@ -98,22 +134,28 @@ export default function SurplusSwipe() {
               }}
               animate={swipeControls}
             >
-              {currentItem.imageURL && (
-                <img
-                  src={currentItem.imageURL}
-                  alt={currentItem.title}
-                  className="w-full h-40 object-cover rounded-xl mb-4"
-                />
-              )}
-
-              <h3 className="text-2xl font-bold mb-2 text-green-900">
-                {currentItem.title}
-              </h3>
-              <p className="text-gray-700">{currentItem.description}</p>
-              <p className="font-semibold mt-2 text-green-700">
-                Qty: {currentItem.quantity}
-              </p>
-              <p className="italic text-gray-600">📍 {currentItem.location}</p>
+              <div>
+                {currentItem.imageURL && (
+                    <img
+                    src={currentItem.imageURL}
+                    alt={currentItem.title}
+                    className="w-full h-40 object-cover rounded-xl mb-4"
+                    />
+                )}
+                <h3 className="text-2xl font-bold mb-2 text-green-900">
+                    {currentItem.title}
+                </h3>
+                <p className="text-gray-700 text-sm">{currentItem.description}</p>
+              </div>
+              <div>
+                <p className="font-semibold mt-2 text-green-700">
+                    Qty: {currentItem.quantity}
+                </p>
+                <p className="italic text-gray-600">📍 {currentItem.location}</p>
+                <p className="text-xl font-bold text-emerald-800 mt-2">
+                    ₹{currentItem.price}
+                </p>
+              </div>
             </motion.div>
           ) : (
             <h2 className="text-xl font-semibold text-white bg-black/30 p-4 rounded-lg">
@@ -133,7 +175,7 @@ export default function SurplusSwipe() {
                 onClick={() => swipe("right")}
                 className="bg-green-500 text-white px-6 py-2 rounded-full shadow hover:bg-green-600 transition"
               >
-                ✅ Claim
+                ✅ Buy
               </button>
             </div>
           )}
@@ -142,3 +184,4 @@ export default function SurplusSwipe() {
     </>
   );
 }
+

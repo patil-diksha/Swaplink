@@ -1,0 +1,50 @@
+/* Custom styles for Leaflet Routing Machine */
+.leaflet-routing-container {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #ddd;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.leaflet-routing-container h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.leaflet-routing-alt,
+.leaflet-routing-alt table {
+  width: 100%;
+}
+
+.leaflet-routing-summary {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.leaflet-routing-instructions table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaflet-routing-instructions th,
+.leaflet-routing-instructions td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.leaflet-routing-instruction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.leaflet-routing-icon {
+  flex-shrink: 0;
+}
